@@ -15,4 +15,6 @@ pip3 install tensorflow tensorflowonspark --user
 
 ## Resources
 
-[TensorFlowOnSpark](https://github.com/yahoo/TensorFlowOnSpark)
+[TensorFlowOnSpark](https://github.com/yahoo/TensorFlowOnSpark)  
+[Discovery Keras](https://github.com/neu-spiral/Discovery-Cluster/wiki/keras)  
+[Discovery GPU](https://github.com/neu-spiral/Discovery-Cluster/wiki/batch-mode)
