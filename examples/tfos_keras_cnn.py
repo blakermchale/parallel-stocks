@@ -1,76 +1,28 @@
-from __future__ import print_function
-from tensorflow import keras
-from tensorflow.keras.datasets import mnist
-from tensorflow.keras.layers import Dense, Flatten
-from tensorflow.keras.layers import Conv2D, MaxPooling2D
-from tensorflow.keras.models import Sequential
-# import matplotlib.pylab as plt
+import keras_cnn
 
-batch_size = 128
-num_classes = 10
-epochs = 10
+if __name__ == '__main__':
+    # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
+    # absl_app.run(main)
+    from pyspark.context import SparkContext
+    from pyspark.conf import SparkConf
+    from tensorflowonspark import TFCluster
+    import argparse
 
-# input image dimensions
-img_x, img_y = 28, 28
+    sc = SparkContext(conf=SparkConf().setAppName("mnist_ex"))
+    executors = sc._conf.get("spark.executor.instances")
+    num_executors = int(executors) if executors is not None else 1
 
-# load the MNIST data set, which already splits into train and test sets for us
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--batch_size", help="number of records per batch", type=int, default=64)
+    parser.add_argument("--buffer_size", help="size of shuffle buffer", type=int, default=1000)
+    parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
+    parser.add_argument("--epochs", help="number of epochs", type=int, default=3)
+    parser.add_argument("--model_dir", help="path to save model/checkpoint", default="segmentation_model")
+    parser.add_argument("--export_dir", help="path to export saved_model", default="segmentation_export")
+    parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
 
-# reshape the data into a 4D tensor - (sample_number, x_img_size, y_img_size, num_channels)
-# because the MNIST is greyscale, we only have a single channel - RGB colour images would have 3
-x_train = x_train.reshape(x_train.shape[0], img_x, img_y, 1)
-x_test = x_test.reshape(x_test.shape[0], img_x, img_y, 1)
-input_shape = (img_x, img_y, 1)
+    args = parser.parse_args()
+    print("args:", args)
 
-# convert the data to the right type
-x_train = x_train.astype('float32')
-x_test = x_test.astype('float32')
-x_train /= 255
-x_test /= 255
-print('x_train shape:', x_train.shape)
-print(x_train.shape[0], 'train samples')
-print(x_test.shape[0], 'test samples')
-
-# convert class vectors to binary class matrices - this is for use in the
-# categorical_crossentropy loss below
-y_train = keras.utils.to_categorical(y_train, num_classes)
-y_test = keras.utils.to_categorical(y_test, num_classes)
-
-model = Sequential()
-model.add(Conv2D(32, kernel_size=(5, 5), strides=(1, 1),
-                 activation='relu',
-                 input_shape=input_shape))
-model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-model.add(Conv2D(64, (5, 5), activation='relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Flatten())
-model.add(Dense(1000, activation='relu'))
-model.add(Dense(num_classes, activation='softmax'))
-
-model.compile(loss=keras.losses.categorical_crossentropy,
-              optimizer=keras.optimizers.Adam(),
-              metrics=['accuracy'])
-
-
-class AccuracyHistory(keras.callbacks.Callback):
-    def on_train_begin(self, logs={}):
-        self.acc = []
-
-    def on_epoch_end(self, batch, logs={}):
-        self.acc.append(logs.get('acc'))
-
-history = AccuracyHistory()
-
-model.fit(x_train, y_train,
-          batch_size=batch_size,
-          epochs=epochs,
-          verbose=1,
-          validation_data=(x_test, y_test),
-          callbacks=[history])
-score = model.evaluate(x_test, y_test, verbose=0)
-print('Test loss:', score[0])
-print('Test accuracy:', score[1])
-# plt.plot(range(1, 11), history.acc)
-# plt.xlabel('Epochs')
-# plt.ylabel('Accuracy')
-# plt.show()
+    cluster = TFCluster.run(sc, keras_cnn.main, tf_args=args, num_executors=num_executors, num_ps=0, input_mode=TFCluster.InputMode.TENSORFLOW, master_node='chief')
+    cluster.shutdown()
