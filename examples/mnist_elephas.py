@@ -27,7 +27,7 @@ nb_classes = 10
 epochs = 1
 
 # Create Spark context
-conf = SparkConf().setAppName('Mnist_Spark_MLP').setMaster('local[8]')
+conf = SparkConf().setAppName('Mnist_Spark_MLP').setMaster('local[4]')
 sc = SparkContext(conf=conf)
 
 # Load data
