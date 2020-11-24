@@ -14,8 +14,13 @@ pip3 install tensorflow tensorflowonspark tensorflow_datasets --user
 pip3 install -e elephas/
 ```
 
+# Data 
+[Huge Stock Market Dataset](https://www.kaggle.com/borismarjanovic/price-volume-data-for-all-us-stocks-etfs)
+
 ## Resources
 
 [TensorFlowOnSpark](https://github.com/yahoo/TensorFlowOnSpark)  
 [Discovery Keras](https://github.com/neu-spiral/Discovery-Cluster/wiki/keras)  
 [Discovery GPU](https://github.com/neu-spiral/Discovery-Cluster/wiki/batch-mode)
+
+

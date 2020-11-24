@@ -90,5 +90,4 @@ print(f"Metrics final: {model.metrics_names}")
 # model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=0, validation_split=0.1)
 # score = model.evaluate(x_test, y_test, verbose=2)
 
-
 print('Test accuracy:', score[1])
