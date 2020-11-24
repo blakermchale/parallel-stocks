@@ -1,12 +1,20 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+# from keras.datasets import mnist
+# from keras.models import Sequential
+# from keras.layers import Dense, Dropout, Activation
+# from keras.optimizers import SGD
+# from keras.utils import np_utils
+# import keras
+
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Activation
 from tensorflow.keras.optimizers import SGD
 from tensorflow.keras import utils
 from tensorflow import keras
+import tensorflow as tf
 
 from elephas.spark_model import SparkModel
 from elephas.utils.rdd_utils import to_simple_rdd
@@ -48,25 +56,30 @@ model.add(Dropout(0.2))
 model.add(Dense(10))
 model.add(Activation('softmax'))
 
-# sgd = SGD(lr=0.1)
+metrics = ['accuracy']
+sgd = SGD(lr=0.1)
 model.compile(loss=keras.losses.categorical_crossentropy,
-                  optimizer=keras.optimizers.Adam(),
-              metrics=None)
+              optimizer=keras.optimizers.Adam(),
+              metrics=metrics)
+
+print(model.optimizer)
+print(keras.optimizers.serialize(model.optimizer))
+print(f"Metrics before spark: {model.metrics}")
 
 # Build RDD from numpy features and labels
 rdd = to_simple_rdd(sc, x_train, y_train)
 
 # Initialize SparkModel from Keras model and Spark context
-spark_model = SparkModel(model, frequency='epoch', mode='asynchronous')
+spark_model = SparkModel(model, frequency='epoch', mode='asynchronous', metrics=metrics)
 
-print(spark_model.master_network.metrics)
+print(f"Metrics after spark: {spark_model.master_metrics}")
 
 # Train Spark model
 spark_model.fit(rdd, epochs=epochs, batch_size=batch_size, verbose=0, validation_split=0.1)
 # Evaluate Spark model by evaluating the underlying model
 score = spark_model.master_network.evaluate(x_test, y_test, verbose=2)
 
-print(model.metrics_names)
+print(f"Metrics final: {model.metrics_names}")
 
 # model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=0, validation_split=0.1)
 # score = model.evaluate(x_test, y_test, verbose=2)
