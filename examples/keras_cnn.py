@@ -5,10 +5,10 @@ from tensorflow.keras.layers import Dense, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras.models import Sequential
 # import matplotlib.pylab as plt
+import tensorflow as tf
 
 
 def main(argv=None, ctx=None):
-
     batch_size = 128
     num_classes = 10
     epochs = 10
