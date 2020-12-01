@@ -16,6 +16,8 @@ from tensorflow.keras import utils
 from tensorflow import keras
 import tensorflow as tf
 
+from time import time
+
 from elephas.spark_model import SparkModel
 from elephas.utils.rdd_utils import to_simple_rdd
 
@@ -75,14 +77,17 @@ spark_model = SparkModel(model, frequency='epoch', mode='asynchronous', metrics=
 print(f"Metrics after spark: {spark_model.master_metrics}")
 
 # Train Spark model
+start = time()
 spark_model.fit(rdd, epochs=epochs, batch_size=batch_size, verbose=0, validation_split=0.1)
+print(f"Fit took: {time() - start}")
 # Evaluate Spark model by evaluating the underlying model
+start = time()
 score = spark_model.master_network.evaluate(x_test, y_test, verbose=2)
+print(f"Fit took: {time() - start}")
 
 print(f"Metrics final: {model.metrics_names}")
 
 # model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=0, validation_split=0.1)
 # score = model.evaluate(x_test, y_test, verbose=2)
-
 
 print('Test accuracy:', score[1])
