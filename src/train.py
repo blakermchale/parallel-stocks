@@ -15,7 +15,9 @@ if __name__ == '__main__':
     print(df.limit(5).toPandas())
 
     stages = []
-    unscaled_features = df.columns.remove("Weighted_Price")
+    unscaled_features = df.columns
+    unscaled_features.remove("Weighted_Price")
+    print(unscaled_features)
     unscaled_assembler = VectorAssembler(inputCols=unscaled_features, outputCol="unscaled_features")
     scaler = MinMaxScaler(inputCol="unscaled_features", outputCol="scaled_features")
 
