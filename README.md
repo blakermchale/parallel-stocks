@@ -12,6 +12,7 @@ conda activate final
 conda install tensorflow-gpu
 pip3 install tensorflow tensorflowonspark tensorflow_datasets --user
 pip3 install -e elephas/
+conda install -c conda-forge koalas
 ```
 
 # Data 
