@@ -12,6 +12,7 @@ from tensorflow.keras.layers import Activation
 
 from tensorflow.keras import optimizers, regularizers
 from tensorflow.keras.optimizers import Adam
+from elephas.spark_model import SparkModel
 
 # Elephas for Deep Learning on Spark
 from elephas.ml_model import ElephasEstimator
@@ -62,44 +63,54 @@ if __name__ == '__main__':
     pipeline_model = pipeline.fit(df)
     df_transform = pipeline_model.transform(df)
 
-    df_transform_fin = df_transform.select('scaled_features', 'Weighted_Price')
+    df_transform_fin = df_transform.select('scaled_features', 'Weighted_Price', 'Timestamp')
     df_transform_fin = df_transform_fin.withColumnRenamed("scaled_features", "features") \
         .withColumnRenamed("Weighted_Price", "label")
     print(df_transform_fin.limit(5).toPandas())
 
     # split data into test/train datasets
-    train_data = df_transform.filter(df_transform["Timestamp"] <= 1529899200)  # 25-Jun-2018
-    test_data = df_transform.filter(df_transform["Timestamp"] > 1529899200)
+    train_data = df_transform_fin.filter(df_transform_fin["Timestamp"] <= 1529899200).select('features', 'label')  # 25-Jun-2018
+    test_data = df_transform_fin.filter(df_transform_fin["Timestamp"] > 1529899200).select('features', 'label')
+    input_dim = len(train_data.select("features").first()[0])
+    print(train_data.select("features").first())
+    print("Input dim: %d" % input_dim)
     print("Train size: %d" % train_data.count())
     print("Test size: %d" % test_data.count())
 
     # create model object
     model = Sequential()
-    model.add(LSTM(128, activation="sigmoid", input_shape=(1, 1)))
+    model.add(LSTM(128, activation="sigmoid", input_shape=(input_dim,1)))
     model.add(Dropout(0.2))
     model.add(Dense(1))
-    model.compile(loss='mean_squared_error', optimizer='adam')
+
+    metrics = ['accuracy']
+    model.compile(loss='mean_squared_error', optimizer='adam', metrics=metrics)
     print(model.summary())
 
     # model.fit(X_train, y_train, epochs=100, batch_size=50, verbose=2)
+    # x = (feats, label)
+    rdd = train_data.rdd.map(lambda x: (x[0].toArray().reshape(len(x[0]),1), x[1]))
+    spark_model = SparkModel(model, frequency='epoch', mode='asynchronous', metrics=metrics)
+    spark_model.fit(rdd, epochs=100, batch_size=64, verbose=0, validation_split=0.1)
+    # score = spark_model.master_network.evaluate()
 
-    # Create Estimator
-    optimizer_conf = optimizers.Adam(lr=0.01)
-    opt_conf = optimizers.serialize(optimizer_conf)
-
-    estimator = ElephasEstimator()
-    estimator.set_keras_model_config(model.to_yaml())
-    estimator.set_num_workers(1)
-    estimator.set_epochs(100)
-    estimator.set_batch_size(64)
-    estimator.set_verbosity(1)
-    estimator.set_validation_split(0.10)
-    estimator.set_optimizer_config(opt_conf)
-    estimator.set_mode("synchronous")
-    estimator.set_loss("mean_squared_error")
-    estimator.set_metrics(['acc'])
-
-    # Create learning pipeline and run
-    dl_pipeline = Pipeline(stages=[estimator])
-    dl_pipeline_fit_score_results(dl_pipeline, train_data, test_data, "label")
+    # # Create Estimator
+    # optimizer_conf = optimizers.Adam(lr=0.01)
+    # opt_conf = optimizers.serialize(optimizer_conf)
+    #
+    # estimator = ElephasEstimator()
+    # estimator.set_keras_model_config(model.to_yaml())
+    # estimator.set_num_workers(1)
+    # estimator.set_epochs(100)
+    # estimator.set_batch_size(64)
+    # estimator.set_verbosity(1)
+    # estimator.set_validation_split(0.10)
+    # estimator.set_optimizer_config(opt_conf)
+    # estimator.set_mode("synchronous")
+    # estimator.set_loss("mean_squared_error")
+    # estimator.set_metrics(['acc'])
+    #
+    # # Create learning pipeline and run
+    # dl_pipeline = Pipeline(stages=[estimator])
+    # dl_pipeline_fit_score_results(dl_pipeline, train_data, test_data, "label")
 
