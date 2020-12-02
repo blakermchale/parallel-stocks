@@ -26,7 +26,7 @@ from pyspark import SparkContext, SparkConf
 # Define basic parameters
 batch_size = 64
 nb_classes = 10
-epochs = 1
+epochs = 20
 
 # Create Spark context
 conf = SparkConf().setAppName('Mnist_Spark_MLP').setMaster('local[4]')
@@ -69,7 +69,7 @@ print(keras.optimizers.serialize(model.optimizer))
 print(f"Metrics before spark: {model.metrics}")
 
 # Build RDD from numpy features and labels
-rdd = to_simple_rdd(sc, x_train, y_train)
+rdd = to_simple_rdd(sc, x_train, y_train).cache()
 
 # Initialize SparkModel from Keras model and Spark context
 spark_model = SparkModel(model, frequency='epoch', mode='asynchronous', metrics=metrics)

@@ -13,38 +13,16 @@ from tensorflow.keras.layers import Activation
 from tensorflow.keras import optimizers, regularizers
 from tensorflow.keras.optimizers import Adam
 from elephas.spark_model import SparkModel
+from time import time
+import numpy as np
 
 # Elephas for Deep Learning on Spark
 from elephas.ml_model import ElephasEstimator
 
-def dl_pipeline_fit_score_results(dl_pipeline, train_data, test_data, label):
-    """
-    """
-    fit_dl_pipeline = dl_pipeline.fit(train_data)
-    pred_train = fit_dl_pipeline.transform(train_data)
-    pred_test = fit_dl_pipeline.transform(test_data)
-
-    pnl_train = pred_train.select(label, "prediction")
-    pnl_test = pred_test.select(label, "prediction")
-
-    pred_and_label_train = pnl_train.rdd.map(lambda row: (row[label], row['prediction']))
-    pred_and_label_test = pnl_test.rdd.map(lambda row: (row[label], row['prediction']))
-
-    metrics_train = MulticlassMetrics(pred_and_label_train)
-    metrics_test = MulticlassMetrics(pred_and_label_test)
-
-    print("Training Data Accuracy: {}".format(round(metrics_train.precision(), 4)))
-    print("Training Data Confusion Matrix")
-    print(pnl_train.crosstab('label_index', 'prediction').toPandas())
-
-    print("\nTest Data Accuracy: {}".format(round(metrics_test.precision(), 4)))
-    print("Test Data Confusion Matrix")
-    print(pnl_test.crosstab('label_index', 'prediction').toPandas())
-
 
 if __name__ == '__main__':
     # create spark context and read in processed data
-    conf = SparkConf().setAppName("Parallel Bitcoin").setMaster('local[6]')
+    conf = SparkConf().setAppName("Parallel Bitcoin").setMaster('local[20]')
     sc = SparkContext(conf=conf)
     sql_c = SQLContext(sc)
     df = sql_c.read.csv("../data/processed/bitstampUSD.csv", header=True, inferSchema=True)
@@ -64,13 +42,12 @@ if __name__ == '__main__':
     df_transform = pipeline_model.transform(df)
 
     df_transform_fin = df_transform.select('scaled_features', 'Weighted_Price', 'Timestamp')
-    df_transform_fin = df_transform_fin.withColumnRenamed("scaled_features", "features") \
-        .withColumnRenamed("Weighted_Price", "label")
+    df_transform_fin = df_transform_fin.withColumnRenamed("scaled_features", "features")
     print(df_transform_fin.limit(5).toPandas())
 
     # split data into test/train datasets
-    train_data = df_transform_fin.filter(df_transform_fin["Timestamp"] <= 1529899200).select('features', 'label')  # 25-Jun-2018
-    test_data = df_transform_fin.filter(df_transform_fin["Timestamp"] > 1529899200).select('features', 'label')
+    train_data = df_transform_fin.filter(df_transform_fin["Timestamp"] <= 1529899200).select('features', "Weighted_Price")  # 25-Jun-2018
+    test_data = df_transform_fin.filter(df_transform_fin["Timestamp"] > 1529899200).select('features', "Weighted_Price")
     input_dim = len(train_data.select("features").first()[0])
     print(train_data.select("features").first())
     print("Input dim: %d" % input_dim)
@@ -79,38 +56,27 @@ if __name__ == '__main__':
 
     # create model object
     model = Sequential()
-    model.add(LSTM(128, activation="sigmoid", input_shape=(input_dim,1)))
+    model.add(LSTM(128, activation="sigmoid", input_shape=(1, 7)))
     model.add(Dropout(0.2))
     model.add(Dense(1))
 
-    metrics = ['accuracy']
-    model.compile(loss='mean_squared_error', optimizer='adam', metrics=metrics)
+    model.compile(loss='mean_squared_error', optimizer='adam')
     print(model.summary())
 
-    # model.fit(X_train, y_train, epochs=100, batch_size=50, verbose=2)
-    # x = (feats, label)
-    rdd = train_data.rdd.map(lambda x: (x[0].toArray().reshape(len(x[0]),1), x[1]))
-    spark_model = SparkModel(model, frequency='epoch', mode='asynchronous', metrics=metrics)
-    spark_model.fit(rdd, epochs=100, batch_size=64, verbose=0, validation_split=0.1)
-    # score = spark_model.master_network.evaluate()
+    rdd = train_data.rdd.map(lambda x: (x[0].toArray().reshape(1, len(x[0])), x[1]))
+    spark_model = SparkModel(model, frequency='epoch', mode='asynchronous')
+    start = time()
+    spark_model.fit(rdd, epochs=20, batch_size=64, verbose=0, validation_split=0.1)
+    fit_dt = time() - start
+    print(f"Fit took: {fit_dt}")
 
-    # # Create Estimator
-    # optimizer_conf = optimizers.Adam(lr=0.01)
-    # opt_conf = optimizers.serialize(optimizer_conf)
-    #
-    # estimator = ElephasEstimator()
-    # estimator.set_keras_model_config(model.to_yaml())
-    # estimator.set_num_workers(1)
-    # estimator.set_epochs(100)
-    # estimator.set_batch_size(64)
-    # estimator.set_verbosity(1)
-    # estimator.set_validation_split(0.10)
-    # estimator.set_optimizer_config(opt_conf)
-    # estimator.set_mode("synchronous")
-    # estimator.set_loss("mean_squared_error")
-    # estimator.set_metrics(['acc'])
-    #
-    # # Create learning pipeline and run
-    # dl_pipeline = Pipeline(stages=[estimator])
-    # dl_pipeline_fit_score_results(dl_pipeline, train_data, test_data, "label")
+    x_test = test_data.toPandas()['features']
+    x_test = np.asarray(test_data.rdd.map(lambda x: x[0].toArray()).collect())
+    x_test = x_test.reshape((x_test.shape[0], 1, x_test.shape[1]))
+    y_test = test_data.toPandas()["Weighted_Price"].to_numpy()
+    y_test = y_test.reshape((len(y_test), 1, 1))
+    print(f"X shape: {x_test.shape}, Y shape: {y_test.shape}")
 
+    score = spark_model.master_network.evaluate(x_test, y_test, verbose=2)
+    print(f"Test score: {score}")
+    print("Done")
