@@ -10,7 +10,7 @@ Log into the discovery cluster and run this while having a cluster checked out.
 conda create --name final python=3.7
 conda activate final
 conda install tensorflow-gpu
-pip3 install tensorflow tensorflowonspark tensorflow_datasets --user
+pip3 install tensorflow --user
 pip3 install -e elephas/ --user
 ```
 
