@@ -22,7 +22,7 @@ from elephas.ml_model import ElephasEstimator
 
 if __name__ == '__main__':
     # create spark context and read in processed data
-    conf = SparkConf().setAppName("Parallel Bitcoin").setMaster('local[20]')
+    conf = SparkConf().setAppName("Parallel Bitcoin").setMaster('local[4]')
     sc = SparkContext(conf=conf)
     sql_c = SQLContext(sc)
     df = sql_c.read.csv("../data/processed/bitstampUSD.csv", header=True, inferSchema=True)
@@ -60,13 +60,17 @@ if __name__ == '__main__':
     model.add(Dropout(0.2))
     model.add(Dense(1))
 
-    model.compile(loss='mean_squared_error', optimizer='adam')
+    metrics = [
+        'MeanSquaredError',
+        'MeanAbsoluteError'
+    ]
+    model.compile(loss='mean_squared_error', optimizer='adam', metrics=metrics)
     print(model.summary())
 
     rdd = train_data.rdd.map(lambda x: (x[0].toArray().reshape(1, len(x[0])), x[1]))
-    spark_model = SparkModel(model, frequency='epoch', mode='asynchronous')
+    spark_model = SparkModel(model, frequency='epoch', mode='asynchronous', metrics=metrics)
     start = time()
-    spark_model.fit(rdd, epochs=20, batch_size=64, verbose=0, validation_split=0.1)
+    spark_model.fit(rdd, epochs=1, batch_size=64, verbose=0, validation_split=0.1)
     fit_dt = time() - start
     print(f"Fit took: {fit_dt}")
 
