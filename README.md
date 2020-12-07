@@ -10,17 +10,22 @@ Log into the discovery cluster and run this while having a cluster checked out.
 conda create --name final python=3.7
 conda activate final
 conda install tensorflow-gpu
-pip3 install tensorflow tensorflowonspark tensorflow_datasets --user
-pip3 install -e elephas/
-conda install -c conda-forge koalas
+pip3 install tensorflow --user
+pip3 install -e elephas/ --user
 ```
 
 # Data 
-[Huge Stock Market Dataset](https://www.kaggle.com/borismarjanovic/price-volume-data-for-all-us-stocks-etfs)
+[Bitcoin Dataset](https://www.kaggle.com/mczielinski/bitcoin-historical-data)
+
+Download the bitcoin dataset and place the csv (after extracting the zip) in the data/raw folder. Rename the file to bitstampUSD.csv
+
+``` bash
+python src/make_dataset.py
+```
 
 ## Resources
 
-[TensorFlowOnSpark](https://github.com/yahoo/TensorFlowOnSpark)  
+[PySpark](https://spark.apache.org/docs/latest/ml-classification-regression.html#random-forest-regression)
 [Discovery Keras](https://github.com/neu-spiral/Discovery-Cluster/wiki/keras)  
 [Discovery GPU](https://github.com/neu-spiral/Discovery-Cluster/wiki/batch-mode)
 
