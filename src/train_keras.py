@@ -8,6 +8,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import Dropout
+import tensorflow as tf
 
 if __name__ == '__main__':
     df = pd.read_csv("../data/processed/bitstampUSD.csv")
@@ -19,21 +20,19 @@ if __name__ == '__main__':
 
     train_set = train_data.values
     print(train_set.shape)
-    train_set = np.reshape(train_set, (len(train_set), 1))
 
     sc = MinMaxScaler()
-    train_set = sc.fit_transform(train_set)
-    X_train = train_set[0:len(train_set) - 1]
-    y_train = train_set[1:len(train_set)]
-    X_train = np.reshape(X_train, (len(X_train), 1, 1))
+    y_train = train_set[:, -1]
+    X_train = sc.fit_transform(train_set[:, :train_set.shape[1]-1])
+    X_train = np.reshape(X_train, (X_train.shape[0], 1, X_train.shape[1]))
 
     test_set = test_data.values
-    X_test = np.reshape(test_set, (len(test_set), 1))
-    X_test = sc.transform(X_test)
-    X_test = np.reshape(X_test, (len(X_test), 1, 1))
+    y_test = test_set[:, -1]
+    X_test = sc.transform(test_set[:, :test_set.shape[1]-1])
+    X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
 
     print(X_train.shape, y_train.shape)
-    print(X_test.shape, y_train.shape)
+    print(X_test.shape, y_test.shape)
 
     model = Sequential()
     model.add(LSTM(128, activation="sigmoid", input_shape=(1, 7)))
@@ -47,7 +46,7 @@ if __name__ == '__main__':
     print(model.summary())
 
     start = time()
-    model.fit(X_train, y_train, epochs=1, verbose=2)
+    model.fit(X_train, y_train, epochs=1)
     dt = time() - start
 
     y_pred = model.predict(X_test)
