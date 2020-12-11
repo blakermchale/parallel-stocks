@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from time import time
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
@@ -13,6 +13,7 @@ import tensorflow as tf
 if __name__ == '__main__':
     df = pd.read_csv("../data/processed/bitstampUSD.csv")
 
+    print(df.head())
     train_data = df.loc[df["Timestamp"] <= 1529899200]
     test_data = df.loc[df["Timestamp"] > 1529899200]
     print(train_data.shape)
@@ -50,10 +51,15 @@ if __name__ == '__main__':
     dt = time() - start
 
     y_pred = model.predict(X_test)
-    y_pred = sc.inverse_transform(y_pred)
 
     print("Time to fit: %f" % dt)
-    mse = mean_squared_error(y_train, y_pred)
+    mse = mean_squared_error(y_test, y_pred)
+    mae = mean_absolute_error(y_test, y_pred)
+    print(f"MSE: {mse}, MAE: {mae}")
+
+    pred_df = pd.DataFrame(y_pred, columns=['Weighted_Price'])
+    pred_df.to_csv('y_pred.csv', index=False)
+    print("Done")
 
 
 
