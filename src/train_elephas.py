@@ -15,6 +15,7 @@ from tensorflow.keras.optimizers import Adam
 from elephas.spark_model import SparkModel
 from time import time
 import numpy as np
+import pandas as pd
 
 # Elephas for Deep Learning on Spark
 from elephas.ml_model import ElephasEstimator
@@ -83,4 +84,8 @@ if __name__ == '__main__':
 
     score = spark_model.master_network.evaluate(x_test, y_test, verbose=2)
     print(f"Test score: {score}")
+
+    y_pred = spark_model.master_network.predict(x_test)
+    pred_df = pd.DataFrame(y_pred, columns=['Weighted_Price'])
+    pred_df.to_csv('elephas_y_pred.csv', index=False)
     print("Done")

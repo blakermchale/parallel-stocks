@@ -49,10 +49,9 @@ if __name__ == '__main__':
     start = time()
     model.fit(X_train, y_train, epochs=1)
     dt = time() - start
+    print("Time to fit: %f" % dt)
 
     y_pred = model.predict(X_test)
-
-    print("Time to fit: %f" % dt)
     mse = mean_squared_error(y_test, y_pred)
     mae = mean_absolute_error(y_test, y_pred)
     print(f"MSE: {mse}, MAE: {mae}")
