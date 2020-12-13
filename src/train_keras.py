@@ -57,7 +57,7 @@ if __name__ == '__main__':
     print(f"MSE: {mse}, MAE: {mae}")
 
     pred_df = pd.DataFrame(y_pred, columns=['Weighted_Price'])
-    pred_df.to_csv('keras_y_pred.csv', index=False)
+    pred_df.to_csv('../data/predictions/keras_y_pred.csv', index=False)
     print("Done")
 
 

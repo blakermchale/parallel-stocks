@@ -87,5 +87,5 @@ if __name__ == '__main__':
 
     y_pred = spark_model.master_network.predict(x_test)
     pred_df = pd.DataFrame(y_pred, columns=['Weighted_Price'])
-    pred_df.to_csv('elephas_y_pred.csv', index=False)
+    pred_df.to_csv('../data/predictions/elephas_y_pred.csv', index=False)
     print("Done")
