@@ -57,5 +57,5 @@ if __name__ == '__main__':
 
     # save predictions to csv
     pred_df = pd.DataFrame(y_pred, columns=['Weighted_Price'])
-    pred_df.to_csv('../data/predictions/gradientboost_y_pred.csv', index=False)
+    pred_df.to_csv('../data/predictions/gradient_boost_y_pred.csv', index=False)
     print("Done")
