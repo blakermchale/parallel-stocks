@@ -31,8 +31,10 @@ if __name__ == '__main__':
     depths = [3, 5, 7, 8]  # needs to be less than equal to 30
 
     min_mae = float('inf')
+    # best_depth = 8
+    # best_step = 0.5
     best_depth = 8
-    best_step = 0.5
+    best_step = 0.001
 
     score = {}
     time_taken = {}
@@ -102,5 +104,5 @@ if __name__ == '__main__':
 
     pred_df = dt_predictions.select('prediction').toPandas()
     pred_df.rename(columns={"prediction": "Weighted_Price"}, inplace=True)
-    pred_df.to_csv('../data/predictions/gboost_mllib_y_pred.csv', index=False)
+    # pred_df.to_csv('../data/predictions/gboost_mllib_y_pred.csv', index=False)
     print("Done")
