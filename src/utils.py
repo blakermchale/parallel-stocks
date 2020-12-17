@@ -34,7 +34,7 @@ def preprocess_parallel(sc):
     df_transform_pre = df_transform_fin.filter(df_transform["Timestamp"] > 1517740920)
     val_data = df_transform_pre.filter(df_transform["Timestamp"] <= 1545174480).select('features', "Weighted_Price")
     test_data = df_transform_pre.filter(df_transform["Timestamp"] > 1545174480).select('features', "Weighted_Price")
-    return train_data, val_data, test_data
+    return sql_c, train_data, val_data, test_data
 
 
 def preprocess_serial():
