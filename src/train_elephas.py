@@ -24,7 +24,7 @@ if __name__ == '__main__':
     sc = SparkContext(conf=conf)
 
     # split data into test/train datasets
-    train_data, val_data, test_data = preprocess_parallel(sc)
+    _, train_data, val_data, test_data = preprocess_parallel(sc)
     input_dim = len(train_data.select("features").first()[0])
     print(train_data.select("features").first())
     print("Input dim: %d" % input_dim)
