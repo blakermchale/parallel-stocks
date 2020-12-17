@@ -18,7 +18,7 @@ def preprocess_parallel(sc):
     unscaled_features = df.columns
     unscaled_features.remove("Weighted_Price")
     unscaled_features.remove("Timestamp")
-    # print(unscaled_features)
+
     unscaled_assembler = VectorAssembler(inputCols=unscaled_features, outputCol="unscaled_features")
     scaler = MinMaxScaler(inputCol="unscaled_features", outputCol="scaled_features")
     stages += [unscaled_assembler, scaler]
