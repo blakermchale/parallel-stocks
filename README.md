@@ -29,4 +29,12 @@ python src/make_dataset.py
 [Discovery Keras](https://github.com/neu-spiral/Discovery-Cluster/wiki/keras)  
 [Discovery GPU](https://github.com/neu-spiral/Discovery-Cluster/wiki/batch-mode)
 
+## Running
+Run the src/train_random_forest__ml_lib.py using the following command:
+
+```
+spark-submit --master local[40] --executor-memory 100G --driver-memory 100G train_random_forest_ml_lib.py
+```
+
+
 
