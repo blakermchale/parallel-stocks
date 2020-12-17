@@ -1,45 +1,27 @@
 import pandas as pd
 import numpy as np
 from time import time
+from utils import preprocess_serial
+
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.experimental import enable_hist_gradient_boosting
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
-from sklearn.ensemble import GradientBoostingRegressor
-
 if __name__ == '__main__':
-    df = pd.read_csv("../data/processed/bitstampUSD.csv")
 
-    print("Data Head:")
-    print(df.head())
+    print("Starting")
 
-    # split data into train and test
-    train_data = df.loc[df["Timestamp"] <= 1529899200]
-    test_data = df.loc[df["Timestamp"] > 1529899200]
-    print(f"Train Data Shape: {train_data.shape}")
-    print(f"Test Data Shape: {test_data.shape}")
-
-    train_set = train_data.values
-    print(f"Train Set Shape: {train_set.shape}")
-
-    # preprocess data
-    sc = MinMaxScaler()
-    y_train = train_set[:, -1]
-    X_train = sc.fit_transform(train_set[:, :train_set.shape[1] - 1])
-
-    test_set = test_data.values
-    y_test = test_set[:, -1]
-    X_test = sc.transform(test_set[:, :test_set.shape[1] - 1])
+    # preprocess the data
+    X_train, X_val, X_test, y_train, y_val, y_test = preprocess_serial()
 
     print("X_train.shape, y_train.shape")
     print(X_train.shape, y_train.shape)
     print("X_test.shape, y_test.shape")
     print(X_test.shape, y_test.shape)
 
-    # create XGBoost model
-
-    # Setting SEED for reproducibility
-    SEED = 1
-    model = GradientBoostingRegressor(n_estimators = 100, max_depth = 5, random_state = SEED)
+    # create model using the best hyperparameters found in the parallel implementation
+    model = HistGradientBoostingRegressor(learning_rate=0.5, max_depth=8)
 
     # fit data
     start = time()
@@ -57,5 +39,5 @@ if __name__ == '__main__':
 
     # save predictions to csv
     pred_df = pd.DataFrame(y_pred, columns=['Weighted_Price'])
-    pred_df.to_csv('../data/predictions/gradient_boost_y_pred.csv', index=False)
+    pred_df.to_csv('../data/predictions/gboost_sklearn_y_pred.csv', index=False)
     print("Done")
