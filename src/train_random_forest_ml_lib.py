@@ -98,7 +98,8 @@ if __name__ == '__main__':
     print(f"Best Mean Absolute Error on Test Data = {best_mae}")
 
     # save predictions to csv
-    pred_df = pd.DataFrame(y_pred, columns=['Weighted_Price'])
+    pred_df = y_pred.select("prediction").toPandas()
+    pred_df.rename(columns={"prediction": "Weighted_Price"}, inplace=True)
     pred_df.to_csv('../data/predictions/rf_mllib_y_pred.csv', index=False)
 
     print("Done")
