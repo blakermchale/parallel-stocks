@@ -108,6 +108,7 @@ class AsynchronousSparkWorker(object):
                 self.train_config['epochs'] = 1
                 if x_train.shape[0] > batch_size:
                     self.model.fit(x_train, y_train, **self.train_config)
+                    print(f"Fot model on data with size {nb_train_sample}")
                 self.train_config['epochs'] = epochs
                 weights_after_training = self.model.get_weights()
                 deltas = subtract_params(
