@@ -59,14 +59,12 @@ if __name__ == '__main__':
             mse = dt_mse_eval.evaluate(dt_predictions)
             mae = dt_mae_eval.evaluate(dt_predictions)
 
-            dt_predictions.select("features", 'Weighted_Price', 'prediction').show(5)
-
             # print stats
             print(f"Time to fit: {end}")
             print(f"Mean Squared Error (MSE) on test data = {mse}")
             print(f"Mean Absolute Error on test data = {mae}")
 
-            if (mae < min_mae):
+            if mae < min_mae:
                 min_mae = mae
                 best_tree = tree
                 best_depth = depth
@@ -88,13 +86,19 @@ if __name__ == '__main__':
     end = time() - now
 
     # test model on the test data
-    dt_predictions = dt_model.transform(test_data)
+    y_pred = dt_model.transform(test_data)
     dt_mse_eval = RegressionEvaluator(labelCol="Weighted_Price", predictionCol="prediction", metricName="mse")
     dt_mae_eval = RegressionEvaluator(labelCol='Weighted_Price', predictionCol="prediction", metricName="mae")
-    best_mse = dt_mse_eval.evaluate(dt_predictions)
-    best_mae = dt_mae_eval.evaluate(dt_predictions)
+    best_mse = dt_mse_eval.evaluate(y_pred)
+    best_mae = dt_mae_eval.evaluate(y_pred)
 
     # print stats
     print(f"Time to Fit: {end}")
     print(f"Best Mean Squared Error (MSE) on Test Data = {best_mse}")
     print(f"Best Mean Absolute Error on Test Data = {best_mae}")
+
+    # save predictions to csv
+    pred_df = pd.DataFrame(y_pred, columns=['Weighted_Price'])
+    pred_df.to_csv('../data/predictions/rf_mllib_y_pred.csv', index=False)
+
+    print("Done")
