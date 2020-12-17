@@ -1,8 +1,5 @@
 from pyspark import SparkConf, SparkContext
-from pyspark.sql import SQLContext
-from pyspark.ml.feature import MinMaxScaler, VectorAssembler
-from pyspark.ml import Pipeline
-from pyspark.mllib.evaluation import MulticlassMetrics
+from utils import preprocess_parallel
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
@@ -25,30 +22,9 @@ if __name__ == '__main__':
     # create spark context and read in processed data
     conf = SparkConf().setAppName("Parallel Bitcoin").setMaster('local[4]')
     sc = SparkContext(conf=conf)
-    sql_c = SQLContext(sc)
-    df = sql_c.read.csv("../data/processed/bitstampUSD.csv", header=True, inferSchema=True)
-    print(df.limit(5).toPandas())
-
-    # create Pipeline and perform MinMaxScaling on features
-    stages = []
-    unscaled_features = df.columns
-    unscaled_features.remove("Weighted_Price")
-    # print(unscaled_features)
-    unscaled_assembler = VectorAssembler(inputCols=unscaled_features, outputCol="unscaled_features")
-    scaler = MinMaxScaler(inputCol="unscaled_features", outputCol="scaled_features")
-    stages += [unscaled_assembler, scaler]
-
-    pipeline = Pipeline(stages=stages)
-    pipeline_model = pipeline.fit(df)
-    df_transform = pipeline_model.transform(df)
-
-    df_transform_fin = df_transform.select('scaled_features', 'Weighted_Price', 'Timestamp')
-    df_transform_fin = df_transform_fin.withColumnRenamed("scaled_features", "features")
-    print(df_transform_fin.limit(5).toPandas())
 
     # split data into test/train datasets
-    train_data = df_transform_fin.filter(df_transform_fin["Timestamp"] <= 1529899200).select('features', "Weighted_Price")  # 25-Jun-2018
-    test_data = df_transform_fin.filter(df_transform_fin["Timestamp"] > 1529899200).select('features', "Weighted_Price")
+    train_data, val_data, test_data = preprocess_parallel(sc)
     input_dim = len(train_data.select("features").first()[0])
     print(train_data.select("features").first())
     print("Input dim: %d" % input_dim)
@@ -57,7 +33,7 @@ if __name__ == '__main__':
 
     # create model object
     model = Sequential()
-    model.add(LSTM(128, activation="sigmoid", input_shape=(1, 7)))
+    model.add(LSTM(128, activation="sigmoid", input_shape=(1, input_dim)))
     model.add(Dropout(0.2))
     model.add(Dense(1))
 
@@ -69,7 +45,7 @@ if __name__ == '__main__':
     print(model.summary())
 
     rdd = train_data.rdd.map(lambda x: (x[0].toArray().reshape(1, len(x[0])), x[1]))
-    spark_model = SparkModel(model, frequency='epoch', mode='asynchronous', metrics=metrics)
+    spark_model = SparkModel(model, frequency='epoch', mode='synchronous', metrics=metrics)
     start = time()
     spark_model.fit(rdd, epochs=1, batch_size=64, verbose=0, validation_split=0.1)
     fit_dt = time() - start
