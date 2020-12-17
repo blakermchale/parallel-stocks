@@ -33,7 +33,7 @@ python src/make_dataset.py
 Run the src/train_random_forest__ml_lib.py using the following command:
 
 ```
-spark-submit --master local[20] --executor-memory 100G --driver-memory 100G train_random_forest_ml_lib.py
+spark-submit --master local[40] --executor-memory 100G --driver-memory 100G train_random_forest_ml_lib.py
 ```
 
 
